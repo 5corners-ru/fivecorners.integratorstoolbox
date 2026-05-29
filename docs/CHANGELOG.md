@@ -6,6 +6,8 @@
 
 ## 1.4.0 (текущая)
 
+- **Ребрендинг в «5 УГЛОВ. Инструменты интегратора Bitrix24».** Папка переименована `fivecorners.bitrix24-bp-syntax-for-browser` → `fivecorners.integratorstoolbox`; продукт спозиционирован как набор инструментов интегратора, подсветка синтаксиса БП — первый инструмент. Обновлены `manifest.json` (name/description/title), README, popup/options titles, CLAUDE.md.
+- **Заведён git-репозиторий.** Initial commit, ветка `main`, remote `github.com/5corners-ru/fivecorners.integratorstoolbox` (registered в Палыче, id=36).
 - **Полная переработка архитектуры подсветки.** Отказ от оверлейного подхода (contenteditable / прозрачный textarea) — фундаментальная проблема несовпадения курсора и текста из-за различий в движках рендеринга оказалась неустранимой.
 - **Новый подход — кнопка по требованию:** рядом с каждым `textarea` появляется маленькая кнопка `</>` (position:fixed). Клик открывает панель с подсвеченным текстом поверх textarea (position:fixed). Ещё клик или Escape — закрывает панель, фокус возвращается в textarea. Textarea не модифицируется вообще.
 - **Добавлен background.js** (service worker): при перезагрузке расширения восстанавливает динамическую регистрацию content scripts для коробочных порталов (`chrome.runtime.onInstalled` / `onStartup`).
