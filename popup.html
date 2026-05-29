@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>5 УГЛОВ. Инструменты интегратора Bitrix24</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-header">
+    <h1>5 УГЛОВ. Инструменты интегратора Bitrix24</h1>
+    <p class="hint">Подсветка работает на всех облачных Битрикс24. Для добавления коробочных Битрикс24 добавьте свой домен в список разрешённых.</p>
+  </div>
+
+  <div class="popup-actions">
+    <label class="global-toggle">
+      <input type="checkbox" id="global-enabled" checked> Включить подсветку синтаксиса
+    </label>
+  </div>
+
+  <ul id="origins-list" class="origins-list"></ul>
+
+  <div class="popup-actions">
+    <div id="current-site-hint" class="current-site-hint" role="status" aria-live="polite" hidden></div>
+    <button type="button" id="add-current-btn" class="btn btn-primary">Добавить текущий портал</button>
+    <a href="#" id="open-options" class="link">Открыть полные настройки</a>
+  </div>
+
+  <div id="status" class="status" role="status" aria-live="polite"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
