@@ -1,7 +1,9 @@
 /**
- * Стили расширения «Bitrix24 БП: подсветка синтаксиса».
- * Кнопка и панель — position:fixed, не затрагивают layout страницы.
+ * Стили расширения «5 УГЛОВ. Инструменты интегратора Bitrix24».
+ * Все элементы — position:fixed / position:absolute, не затрагивают layout страницы.
  */
+
+/* ── Подсветка синтаксиса: кнопка и панель ─────────────────────────────── */
 
 .bp-hl-btn {
   position: fixed;
@@ -45,4 +47,87 @@
 .bp-hl-panel code {
   display: block;
   font: inherit;
+}
+
+/* ── Поиск в select-списках ─────────────────────────────────────────────── */
+
+.bp-sel-search {
+  display: block;
+  box-sizing: border-box;
+  padding: 3px 7px;
+  margin-bottom: 2px;
+  border: 1px solid #bbb;
+  border-radius: 3px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #333;
+  background: #fff;
+  outline: none;
+}
+
+.bp-sel-search:focus {
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0,102,204,.15);
+}
+
+.bp-sel-dropdown {
+  position: fixed;
+  z-index: 2147483642;
+  display: none;
+  max-height: 220px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #bbb;
+  border-radius: 3px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.18);
+  font-size: 13px;
+}
+
+.bp-sel-item {
+  padding: 5px 9px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #222;
+}
+
+.bp-sel-item:hover,
+.bp-sel-active {
+  background: #e8f0fe;
+  color: #0047b3;
+}
+
+.bp-sel-nores {
+  padding: 5px 9px;
+  color: #888;
+  font-style: italic;
+}
+
+/* ── Значок ошибки на ноде БП ───────────────────────────────────────────── */
+
+.bp-err-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  background: #e53e3e;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0,0,0,.35);
+  pointer-events: none;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: bold;
+  font-family: sans-serif;
+  color: #fff;
+  line-height: 1;
+}
+
+.bp-err-badge::before {
+  content: '!';
 }

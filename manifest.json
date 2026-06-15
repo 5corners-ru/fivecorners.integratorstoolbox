@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "5 УГЛОВ. Инструменты интегратора Bitrix24",
-  "version": "1.4.0",
-  "description": "Набор инструментов интегратора Bitrix24. Текущая возможность: подсветка синтаксиса выражений в дизайнере бизнес-процессов ({=Document:...}, {{Переменная}}, кавычки, скобки)",
+  "version": "1.5.1",
+  "description": "Набор инструментов интегратора Bitrix24: подсветка синтаксиса БП, поиск в select-списках, значок ошибки на нодах с недоступными полями/переменными",
   "permissions": ["storage", "scripting", "activeTab", "tabs"],
   "optional_host_permissions": ["https://*/*", "http://*/*"],
   "host_permissions": [

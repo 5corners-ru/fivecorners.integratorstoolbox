@@ -1,17 +1,18 @@
 /**
- * content.js — подсветка синтаксиса выражений в дизайнере БП Bitrix24.
+ * content.js — инструменты интегратора Bitrix24.
  *
- * Подход: кнопка по требованию.
- *   Textarea не трогается вообще — никакой прозрачности, никаких оберток.
- *   Рядом с textarea появляется маленькая кнопка «</>».
- *   Клик — открывается панель с подсвеченным текстом поверх textarea (position:fixed).
- *   Клик по панели или Escape — панель закрывается, фокус возвращается в textarea.
+ * 1. Подсветка синтаксиса выражений в дизайнере БП (кнопка по требованию).
+ * 2. Поиск по тексту в стандартных select-списках (>= 5 вариантов).
+ * 3. Красный значок на ноде БП, если внутри её настроек Битрикс сообщает
+ *    об отсутствующих / недоступных полях, переменных или константах.
  */
 
 (function () {
   'use strict';
 
-  var ATTR_DONE = 'data-bp-hl';
+  var ATTR_DONE        = 'data-bp-hl';
+  var ATTR_SEARCH_DONE = 'data-bp-sel';
+  var ATTR_NODE_ERROR  = 'data-bp-err';
 
   // ── Тема и цвета ──────────────────────────────────────────────────────────
 
@@ -162,7 +163,6 @@
 
     var cs = window.getComputedStyle(textarea);
 
-    /* Кнопка: position:fixed, висит в правом верхнем углу textarea */
     var btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'bp-hl-btn';
@@ -170,7 +170,6 @@
     btn.title = 'Подсветка синтаксиса';
     document.body.appendChild(btn);
 
-    /* Панель подсветки: position:fixed, появляется поверх textarea по клику */
     var panel = document.createElement('div');
     panel.className = 'bp-hl-panel';
     panel.title = 'Кликни для закрытия (или Escape)';
@@ -261,6 +260,244 @@
     });
   }
 
+  // ── Фича 2: Поиск в select-списках ───────────────────────────────────────
+
+  var BP_SEL_MIN = 5;
+
+  function attachSearchableSelect(sel) {
+    if (sel.getAttribute(ATTR_SEARCH_DONE)) return;
+    if (sel.options.length < BP_SEL_MIN) return;
+    sel.setAttribute(ATTR_SEARCH_DONE, 'true');
+
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'bp-sel-search';
+    input.placeholder = 'Поиск в списке…';
+    sel.parentNode.insertBefore(input, sel);
+
+    function syncInputWidth() {
+      var w = sel.offsetWidth;
+      if (w > 0) input.style.width = w + 'px';
+    }
+    syncInputWidth();
+    var widthObs = new ResizeObserver(syncInputWidth);
+    widthObs.observe(sel);
+
+    var dropdown = document.createElement('div');
+    dropdown.className = 'bp-sel-dropdown';
+    document.body.appendChild(dropdown);
+
+    var activeIdx = -1;
+
+    function getItems() {
+      return dropdown.querySelectorAll('.bp-sel-item');
+    }
+
+    function setActive(idx) {
+      var items = getItems();
+      if (activeIdx >= 0 && items[activeIdx]) {
+        items[activeIdx].className = 'bp-sel-item';
+      }
+      activeIdx = idx;
+      if (activeIdx >= 0 && items[activeIdx]) {
+        items[activeIdx].className = 'bp-sel-item bp-sel-active';
+        items[activeIdx].scrollIntoView({ block: 'nearest' });
+      }
+    }
+
+    function positionDropdown() {
+      var r = input.getBoundingClientRect();
+      dropdown.style.left  = Math.round(r.left)       + 'px';
+      dropdown.style.top   = Math.round(r.bottom + 2) + 'px';
+      dropdown.style.width = Math.max(Math.round(r.width), 200) + 'px';
+    }
+
+    function selectValue(value, text) {
+      sel.value = value;
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+      input.value = text;
+      dropdown.style.display = 'none';
+      activeIdx = -1;
+    }
+
+    function closeDropdown() {
+      dropdown.style.display = 'none';
+      activeIdx = -1;
+    }
+
+    function buildDropdown(query) {
+      dropdown.innerHTML = '';
+      activeIdx = -1;
+      if (!query) { closeDropdown(); return; }
+
+      var q = query.toLowerCase();
+      var matches = [];
+      for (var i = 0; i < sel.options.length; i++) {
+        var opt = sel.options[i];
+        if (opt.text.toLowerCase().indexOf(q) !== -1) {
+          matches.push({ text: opt.text, value: opt.value });
+        }
+      }
+
+      if (!matches.length) {
+        var nores = document.createElement('div');
+        nores.className = 'bp-sel-nores';
+        nores.textContent = 'Не найдено';
+        dropdown.appendChild(nores);
+      } else {
+        matches.forEach(function (m) {
+          var item = document.createElement('div');
+          item.className = 'bp-sel-item';
+          item.textContent = m.text;
+          item.setAttribute('data-val', m.value);
+          item.addEventListener('mousedown', function (e) {
+            e.preventDefault();
+            selectValue(m.value, m.text);
+          });
+          dropdown.appendChild(item);
+        });
+      }
+
+      positionDropdown();
+      dropdown.style.display = 'block';
+    }
+
+    input.addEventListener('input', function () {
+      buildDropdown(input.value.trim());
+    });
+
+    input.addEventListener('keydown', function (e) {
+      var items = getItems();
+      var key = e.key || '';
+      var kc  = e.keyCode;
+      if (key === 'ArrowDown' || kc === 40) {
+        e.preventDefault();
+        setActive(Math.min(activeIdx + 1, items.length - 1));
+      } else if (key === 'ArrowUp' || kc === 38) {
+        e.preventDefault();
+        setActive(Math.max(activeIdx - 1, 0));
+      } else if (key === 'Enter' || kc === 13) {
+        e.preventDefault();
+        if (activeIdx >= 0 && items[activeIdx]) {
+          selectValue(
+            items[activeIdx].getAttribute('data-val'),
+            items[activeIdx].textContent
+          );
+        }
+      } else if (key === 'Escape' || kc === 27) {
+        closeDropdown();
+      }
+    });
+
+    input.addEventListener('blur', function () {
+      setTimeout(closeDropdown, 150);
+    });
+
+    input.addEventListener('focus', function () {
+      if (input.value.trim()) buildDropdown(input.value.trim());
+    });
+
+    window.addEventListener('scroll', function () {
+      if (dropdown.style.display !== 'none') positionDropdown();
+    }, true);
+    window.addEventListener('resize', function () {
+      if (dropdown.style.display !== 'none') positionDropdown();
+    });
+  }
+
+  function scanSelects(root) {
+    var r = root || document;
+    if (!r.querySelectorAll) return;
+    var selects = r.querySelectorAll('select');
+    for (var i = 0; i < selects.length; i++) {
+      var sel = selects[i];
+      if (sel.getAttribute(ATTR_SEARCH_DONE)) continue;
+      if (sel.offsetParent === null) continue;
+      attachSearchableSelect(sel);
+    }
+  }
+
+  // ── Фича 1: Красный значок на ноде БП при ошибке ─────────────────────────
+
+  var lastMouseTarget = null;
+  var lastMouseTime   = 0;
+
+  var BP_ERR_MARKERS = ['отсутствующ', 'недоступн'];
+
+  function hasErrorText(el) {
+    var text = (el && el.textContent) ? el.textContent : '';
+    for (var i = 0; i < BP_ERR_MARKERS.length; i++) {
+      if (text.indexOf(BP_ERR_MARKERS[i]) !== -1) return true;
+    }
+    return false;
+  }
+
+  function looksLikeActivityDialog(el) {
+    if (!el || el.nodeType !== 1) return false;
+    var cls = typeof el.className === 'string' ? el.className : '';
+    return /(^| )popup-window( |$)/.test(cls) ||
+           /(^| )bx-core-window( |$)/.test(cls);
+  }
+
+  function findActivityNode(el) {
+    if (!el) return null;
+    var cur = el;
+    for (var depth = 0; depth < 25 && cur && cur !== document.body; depth++, cur = cur.parentElement) {
+      if (cur.nodeType !== 1) continue;
+      var cls = typeof cur.className === 'string' ? cur.className : '';
+      if (cls.indexOf('activityhead') !== -1) {
+        return cur.parentElement || cur;
+      }
+      if (
+        /bizproc.*(activity|robot|block|element|action|item|task)/i.test(cls) ||
+        /automation.*(robot|action|trigger)/i.test(cls) ||
+        cls.indexOf('activity-modern') !== -1 ||
+        cur.hasAttribute('data-activity-id') ||
+        cur.hasAttribute('data-robot-id') ||
+        cur.hasAttribute('data-cid')
+      ) {
+        return cur;
+      }
+    }
+    return null;
+  }
+
+  function markNodeError(node) {
+    if (!node) return;
+    if (node.getAttribute(ATTR_NODE_ERROR)) return;
+    node.setAttribute(ATTR_NODE_ERROR, 'true');
+    if (window.getComputedStyle(node).position === 'static') {
+      node.style.position = 'relative';
+    }
+    var badge = document.createElement('span');
+    badge.className = 'bp-err-badge';
+    badge.title = 'Используются отсутствующие или недоступные поля/переменные/константы';
+    node.appendChild(badge);
+  }
+
+  function watchDialogForErrors(dialog) {
+    var savedTarget = lastMouseTarget;
+    if (hasErrorText(dialog)) {
+      markNodeError(findActivityNode(savedTarget));
+      return;
+    }
+    var obs = new MutationObserver(function () {
+      if (hasErrorText(dialog)) {
+        obs.disconnect();
+        markNodeError(findActivityNode(savedTarget));
+      }
+    });
+    obs.observe(dialog, { childList: true, subtree: true, characterData: true });
+    setTimeout(function () { obs.disconnect(); }, 5000);
+  }
+
+  function initErrorBadgeDetector() {
+    document.addEventListener('mousedown', function (e) {
+      lastMouseTarget = e.target;
+      lastMouseTime   = Date.now();
+    }, true);
+  }
+
   // ── Проверка целевой страницы ─────────────────────────────────────────────
 
   function isTargetPage() {
@@ -307,22 +544,40 @@
 
         if (!isTargetPage()) return;
 
+        initErrorBadgeDetector();
+
         scanAndAttach(document);
+        scanSelects(document);
 
         [300, 1000, 2500].forEach(function (ms) {
-          setTimeout(function () { scanAndAttach(document); }, ms);
+          setTimeout(function () {
+            scanAndAttach(document);
+            scanSelects(document);
+          }, ms);
         });
 
         if (document.body) {
           var observer = new MutationObserver(function (mutations) {
             var added = false;
             for (var i = 0; i < mutations.length; i++) {
-              for (var j = 0; j < mutations[i].addedNodes.length; j++) {
-                if (mutations[i].addedNodes[j].nodeType === 1) { added = true; break; }
+              var addedNodes = mutations[i].addedNodes;
+              for (var j = 0; j < addedNodes.length; j++) {
+                var node = addedNodes[j];
+                if (node.nodeType !== 1) continue;
+                added = true;
+                // Фича 1: смотрим, не открылся ли диалог активити
+                if (Date.now() - lastMouseTime < 3000 && looksLikeActivityDialog(node)) {
+                  if (!node.hasAttribute('data-bp-err-watched')) {
+                    node.setAttribute('data-bp-err-watched', 'true');
+                    watchDialogForErrors(node);
+                  }
+                }
               }
-              if (added) break;
             }
-            if (added) scanAndAttach(document);
+            if (added) {
+              scanAndAttach(document);
+              scanSelects(document);
+            }
           });
           observer.observe(document.body, { childList: true, subtree: true });
         }
