@@ -109,6 +109,57 @@ body {
 .global-toggle input,
 .debug-toggle input { cursor: pointer; }
 
+/* Секция тумблеров инструментов */
+.tools-section {
+  margin-bottom: 0.75rem;
+}
+
+.tools-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #888;
+  margin-bottom: 0.4rem;
+}
+
+.tool-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.tool-toggle:last-of-type {
+  border-bottom: none;
+}
+
+.tool-toggle input {
+  margin-top: 0.15rem;
+  cursor: pointer;
+}
+
+.tool-name {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+  line-height: 1.25;
+}
+
+.tool-name small {
+  color: #888;
+  font-size: 0.75rem;
+  margin-top: 0.1rem;
+}
+
+.tools-hint {
+  margin: 0.4rem 0 0 0;
+  font-size: 0.75rem;
+  color: #999;
+}
+
 .current-site-hint {
   padding: 0.4rem 0.5rem;
   font-size: 0.85rem;

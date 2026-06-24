@@ -12,10 +12,25 @@
     <p class="hint">Подсветка работает на всех облачных Битрикс24. Для добавления коробочных Битрикс24 добавьте свой домен в список разрешённых.</p>
   </div>
 
-  <div class="popup-actions">
-    <label class="global-toggle">
-      <input type="checkbox" id="global-enabled" checked> Включить подсветку синтаксиса
+  <div class="tools-section">
+    <div class="tools-title">Инструменты</div>
+    <label class="tool-toggle">
+      <input type="checkbox" data-tool="bpSyntaxEnabled" checked>
+      <span class="tool-name">Подсветка синтаксиса<small>в полях выражений дизайнера БП</small></span>
     </label>
+    <label class="tool-toggle">
+      <input type="checkbox" data-tool="bpToolSelectSearch" checked>
+      <span class="tool-name">Поиск в списках и полях<small>в выпадающих списках и выборе полей</small></span>
+    </label>
+    <label class="tool-toggle">
+      <input type="checkbox" data-tool="bpToolNodeSearch" checked>
+      <span class="tool-name">Поиск по нодам<small>в правой панели действий дизайнера БП</small></span>
+    </label>
+    <label class="tool-toggle">
+      <input type="checkbox" data-tool="bpToolBrokenLinks" checked>
+      <span class="tool-name">Подсветка нод с ошибками<small>отметка нод с битыми полями/переменными</small></span>
+    </label>
+    <p class="tools-hint">После переключения обновите страницу с БП.</p>
   </div>
 
   <ul id="origins-list" class="origins-list"></ul>

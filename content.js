@@ -658,9 +658,18 @@
 
   function init() {
     chrome.storage.local.get(
-      ['bpSyntaxCustomOrigins', 'bpSyntaxEnabled', 'bpSyntaxTheme', 'bpSyntaxColors'],
+      ['bpSyntaxCustomOrigins', 'bpSyntaxEnabled', 'bpSyntaxTheme', 'bpSyntaxColors',
+       'bpToolSelectSearch', 'bpToolNodeSearch', 'bpToolBrokenLinks'],
       function (data) {
-        if (data.bpSyntaxEnabled === false) return;
+        // Пофичевые тумблеры (управляются из popup). Любой ключ === false → инструмент выключен,
+        // отсутствие ключа → включён по умолчанию (совместимость со старыми установками).
+        var tools = {
+          syntax : data.bpSyntaxEnabled    !== false,  // подсветка синтаксиса (кнопка </>)
+          select : data.bpToolSelectSearch !== false,  // поиск в select-списках и field picker
+          nodes  : data.bpToolNodeSearch   !== false,  // поиск по нодам в панели активностей
+          broken : data.bpToolBrokenLinks  !== false   // подсветка нод с битыми полями/переменными
+        };
+        if (!tools.syntax && !tools.select && !tools.nodes && !tools.broken) return;
 
         currentTheme = data.bpSyntaxTheme || 'light';
         customColors = (data.bpSyntaxColors && typeof data.bpSyntaxColors === 'object')
@@ -671,48 +680,54 @@
 
         if (!isTargetPage()) return;
 
+        // Один проход сканирования — каждая фича запускается только если включена.
+        function scanAll() {
+          if (tools.syntax) scanAndAttach(document);
+          if (tools.select) { scanSelects(document); scanFieldPickerPopups(document); }
+          if (tools.nodes)  tryAttachActivitySearch();
+        }
+
         document.addEventListener('click', function (e) {
-          var btn = e.target.closest('.activityset');
-          if (btn) pendingNode = btn.closest('div.activity.activity-modern');
+          if (tools.broken) {
+            var btn = e.target.closest('.activityset');
+            if (btn) pendingNode = btn.closest('div.activity.activity-modern');
+          }
 
           // Клик на «выбрать» открывает popup с категориями полей —
           // сканируем select-ы через небольшую задержку.
-          var link = e.target.closest('a, span');
-          if (link && (link.textContent || '').trim() === 'выбрать') {
-            [150, 400].forEach(function (ms) {
-              setTimeout(function () { scanSelects(document); }, ms);
-            });
+          if (tools.select) {
+            var link = e.target.closest('a, span');
+            if (link && (link.textContent || '').trim() === 'выбрать') {
+              [150, 400].forEach(function (ms) {
+                setTimeout(function () { scanSelects(document); }, ms);
+              });
+            }
           }
         }, true);
 
         // Наведение на пункт-подменю (.menu-popup-item-submenu) раскрывает
         // вложенный popup с SELECT-ом полей — сканируем после появления.
-        document.addEventListener('mouseover', function (e) {
-          if (e.target.closest('.menu-popup-item-submenu')) {
-            setTimeout(function () { scanSelects(document); }, 250);
-          }
-        }, true);
+        if (tools.select) {
+          document.addEventListener('mouseover', function (e) {
+            if (e.target.closest('.menu-popup-item-submenu')) {
+              setTimeout(function () { scanSelects(document); }, 250);
+            }
+          }, true);
+        }
 
-        scanAndAttach(document);
-        scanSelects(document);
-        tryAttachActivitySearch();
-        scanFieldPickerPopups(document);
-
+        scanAll();
         [300, 1000, 2500].forEach(function (ms) {
-          setTimeout(function () {
-            scanAndAttach(document);
-            scanSelects(document);
-            tryAttachActivitySearch();
-            scanFieldPickerPopups(document);
-          }, ms);
+          setTimeout(scanAll, ms);
         });
 
-        chrome.runtime.sendMessage({ type: 'bp-inject-scanner' });
-        document.addEventListener('bp-broken-scan-done', function () {
-          clearAllBpWarnings();
-          var broken = document.querySelectorAll('div.activity.activity-modern[data-bp-broken-link]');
-          for (var i = 0; i < broken.length; i++) markNodeWithWarning(broken[i]);
-        });
+        if (tools.broken) {
+          chrome.runtime.sendMessage({ type: 'bp-inject-scanner' });
+          document.addEventListener('bp-broken-scan-done', function () {
+            clearAllBpWarnings();
+            var broken = document.querySelectorAll('div.activity.activity-modern[data-bp-broken-link]');
+            for (var i = 0; i < broken.length; i++) markNodeWithWarning(broken[i]);
+          });
+        }
 
         if (document.body) {
           var observer = new MutationObserver(function (mutations) {
@@ -726,7 +741,7 @@
                 added = true;
                 if (looksLikeActivityDialog(node)) {
                   dialogChanged = true;
-                  checkDialogForWarning();
+                  if (tools.broken) checkDialogForWarning();
                 }
               }
               var removedNodes = mutations[i].removedNodes;
@@ -735,13 +750,9 @@
                 if (rnode.nodeType === 1 && looksLikeActivityDialog(rnode)) dialogChanged = true;
               }
             }
-            if (dialogChanged) document.dispatchEvent(new CustomEvent('bp-dialog-changed'));
-            if (added) {
-              scanAndAttach(document);
-              scanSelects(document);
-              tryAttachActivitySearch();
-              scanFieldPickerPopups(document);
-            }
+            // bp-dialog-changed нужен подсветке для репозиционирования кнопки </>.
+            if (dialogChanged && tools.syntax) document.dispatchEvent(new CustomEvent('bp-dialog-changed'));
+            if (added) scanAll();
           });
           observer.observe(document.body, { childList: true, subtree: true });
         }

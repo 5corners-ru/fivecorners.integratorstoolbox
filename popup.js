@@ -13,12 +13,10 @@
   'use strict';
 
   const STORAGE_KEY = 'bpSyntaxCustomOrigins';
-  const ENABLED_STORAGE_KEY = 'bpSyntaxEnabled';
   const LIST_ID = 'origins-list';
   const STATUS_ID = 'status';
   const ADD_CURRENT_BTN_ID = 'add-current-btn';
   const OPEN_OPTIONS_ID = 'open-options';
-  const GLOBAL_ENABLED_ID = 'global-enabled';
 
   /** Origin активной вкладки на момент открытия popup (для подсказки «уже добавлен»). */
   let currentOriginCache = null;
@@ -301,15 +299,23 @@
     }
   });
 
-  /* Переключатель «Включить подсветку синтаксиса». */
-  var globalEnabledEl = document.getElementById(GLOBAL_ENABLED_ID);
-  if (globalEnabledEl) {
-    chrome.storage.local.get([ENABLED_STORAGE_KEY], function (data) {
-      globalEnabledEl.checked = data[ENABLED_STORAGE_KEY] !== false;
+  /* Тумблеры инструментов. Каждый чекбокс хранит свой ключ в data-tool;
+     отсутствие ключа в storage = инструмент включён (default). */
+  var toolToggles = document.querySelectorAll('input[data-tool]');
+  if (toolToggles.length) {
+    var toolKeys = Array.prototype.map.call(toolToggles, function (el) { return el.getAttribute('data-tool'); });
+    chrome.storage.local.get(toolKeys, function (data) {
+      Array.prototype.forEach.call(toolToggles, function (el) {
+        el.checked = data[el.getAttribute('data-tool')] !== false;
+      });
     });
-    globalEnabledEl.addEventListener('change', function () {
-      chrome.storage.local.set({ [ENABLED_STORAGE_KEY]: this.checked });
-      showStatus(this.checked ? 'Подсветка включена. Обновите страницу с БП.' : 'Подсветка выключена. Обновите страницу.');
+    Array.prototype.forEach.call(toolToggles, function (el) {
+      el.addEventListener('change', function () {
+        var key = this.getAttribute('data-tool');
+        var on = this.checked;
+        chrome.storage.local.set({ [key]: on });
+        showStatus((on ? 'Инструмент включён' : 'Инструмент выключен') + '. Обновите страницу с БП.');
+      });
     });
   }
 
