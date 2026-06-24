@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "5 УГЛОВ. Инструменты интегратора Bitrix24",
-  "version": "1.9.5",
-  "description": "Набор инструментов интегратора Bitrix24: подсветка синтаксиса БП, поиск в select-списках, поиск по нодам в панели активностей, поиск в field picker условия «Смешанное», значок ошибки на нодах с недоступными полями/переменными",
+  "version": "1.9.6",
+  "description": "Инструменты интегратора Bitrix24: подсветка синтаксиса БП, поиск по нодам и спискам, отметка нод с ошибками.",
   "permissions": ["storage", "scripting", "activeTab"],
   "optional_host_permissions": ["https://*/*", "http://*/*"],
   "host_permissions": [
