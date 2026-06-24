@@ -143,25 +143,33 @@
       return;
     }
 
+    var ICON_EDIT = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M4 20h4l10-10-4-4L4 16v4zM14.5 6.5l3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    var ICON_REMOVE = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M6 7l1 13h10l1-13M10 11v5M14 11v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
     list.forEach(function (origin) {
       const li = document.createElement('li');
       const textSpan = document.createElement('span');
       textSpan.className = 'origin-text';
       textSpan.textContent = origin;
+      textSpan.title = origin;
 
       const editBtn = document.createElement('button');
       editBtn.type = 'button';
-      editBtn.className = 'btn-small';
-      editBtn.textContent = 'Изменить';
+      editBtn.className = 'btn-small btn-icon';
+      editBtn.title = 'Изменить';
+      editBtn.setAttribute('aria-label', 'Изменить');
+      editBtn.innerHTML = ICON_EDIT;
       editBtn.addEventListener('click', function () {
         enterEditMode(li, origin, list);
       });
 
       const removeBtn = document.createElement('button');
       removeBtn.type = 'button';
-      removeBtn.className = 'btn-small btn-remove js-remove-origin';
-      removeBtn.textContent = 'Удалить';
+      removeBtn.className = 'btn-small btn-icon btn-remove js-remove-origin';
+      removeBtn.title = 'Удалить';
+      removeBtn.setAttribute('aria-label', 'Удалить');
       removeBtn.setAttribute('data-origin', origin);
+      removeBtn.innerHTML = ICON_REMOVE;
 
       li.appendChild(textSpan);
       li.appendChild(editBtn);
@@ -293,9 +301,10 @@
 
   /* Делегирование: клик по «Удалить» — читаем data-origin, список подтягиваем из storage. */
   document.getElementById(LIST_ID).addEventListener('click', function (e) {
-    if (e.target && e.target.classList && e.target.classList.contains('js-remove-origin')) {
+    var btn = e.target && e.target.closest ? e.target.closest('.js-remove-origin') : null;
+    if (btn) {
       e.preventDefault();
-      var origin = e.target.getAttribute('data-origin');
+      var origin = btn.getAttribute('data-origin');
       if (origin) removeOrigin(origin);
     }
   });

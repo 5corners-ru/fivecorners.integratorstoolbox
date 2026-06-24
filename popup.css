@@ -217,7 +217,10 @@ body {
 
 .origin-text {
   flex: 1;
-  word-break: break-all;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: var(--text);
   font-weight: 500;
 }
@@ -279,6 +282,18 @@ body {
   background: var(--surface-hover);
   color: var(--text);
 }
+
+/* Иконочные кнопки (Изменить/Удалить) в строке портала — компактные, квадратные */
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+}
+
+.btn-icon svg { width: 16px; height: 16px; }
 
 .btn-remove,
 .btn-remove.js-remove-origin,
