@@ -310,4 +310,9 @@
   });
 
   loadAndRender();
+
+  /* Портал мог добавиться из popup (через service worker) — обновляем список вживую. */
+  chrome.storage.onChanged.addListener(function (changes, area) {
+    if (area === 'local' && changes[STORAGE_KEY_ORIGINS]) loadAndRender();
+  });
 })();

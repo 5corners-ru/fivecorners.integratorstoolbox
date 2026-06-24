@@ -273,12 +273,13 @@
     if (!hintEl || !btn) return;
     const alreadyAdded = currentOrigin && list.indexOf(currentOrigin) !== -1;
     if (alreadyAdded) {
-      hintEl.textContent = 'Текущий портал уже добавлен.';
+      hintEl.textContent = '🎉 Текущий портал добавлен в расширение!';
       hintEl.removeAttribute('hidden');
-      btn.disabled = true;
+      btn.style.display = 'none';
     } else {
       hintEl.setAttribute('hidden', '');
       hintEl.textContent = '';
+      btn.style.display = '';
       btn.disabled = false;
     }
   }
@@ -327,5 +328,14 @@
       renderList(list);
       updateCurrentSiteHint(list, currentOriginCache);
     });
+  });
+
+  /* Список порталов может дописать service worker (после выдачи разрешения,
+     когда popup уже закрывался) — перерисовываем вживую, если popup ещё открыт. */
+  chrome.storage.onChanged.addListener(function (changes, area) {
+    if (area !== 'local' || !changes[STORAGE_KEY]) return;
+    const list = changes[STORAGE_KEY].newValue || [];
+    renderList(list);
+    updateCurrentSiteHint(list, currentOriginCache);
   });
 })();

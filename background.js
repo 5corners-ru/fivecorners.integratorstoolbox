@@ -36,6 +36,34 @@ function reRegisterAll() {
 chrome.runtime.onInstalled.addListener(reRegisterAll);
 chrome.runtime.onStartup.addListener(reRegisterAll);
 
+/**
+ * Когда пользователь жмёт «Добавить текущий портал» в popup, тот вызывает
+ * chrome.permissions.request(). На время системного диалога разрешений Chrome
+ * закрывает popup — и его callback (запись в storage + регистрация скрипта)
+ * не успевает отработать. Поэтому финализацию делаем здесь, в service worker:
+ * onAdded переживает закрытие popup.
+ */
+chrome.permissions.onAdded.addListener(function (perms) {
+  var patterns = (perms && perms.origins) || [];
+  // Пропускаем широкие/wildcard-шаблоны — нас интересуют конкретные порталы.
+  var origins = patterns
+    .map(function (p) { return p.replace(/\/\*$/, ''); })
+    .filter(function (o) { return o && o.indexOf('*') === -1; });
+  if (!origins.length) return;
+
+  chrome.storage.local.get([STORAGE_KEY], function (data) {
+    var list = Array.isArray(data[STORAGE_KEY]) ? data[STORAGE_KEY].slice() : [];
+    var added = [];
+    origins.forEach(function (o) {
+      if (list.indexOf(o) === -1) { list.push(o); added.push(o); }
+    });
+    if (!added.length) return;
+    chrome.storage.local.set({ [STORAGE_KEY]: list }, function () {
+      added.forEach(registerScriptForOrigin);
+    });
+  });
+});
+
 chrome.runtime.onMessage.addListener(function (message, sender) {
   if (message.type === 'bp-inject-scanner' && sender.tab) {
     chrome.scripting.executeScript({
