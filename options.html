@@ -6,6 +6,7 @@
   <title>Настройки — 5 УГЛОВ. Инструменты интегратора Bitrix24</title>
   <link rel="stylesheet" href="tokens.css">
   <link rel="stylesheet" href="options.css">
+  <script src="theme.js"></script>
 </head>
 <body>
   <div class="page">
@@ -17,6 +18,26 @@
       <div class="page-title">
         <h1>5 УГЛОВ. Инструменты интегратора Bitrix24</h1>
         <p class="page-sub">Полные настройки расширения</p>
+      </div>
+
+      <div class="theme-switch" role="group" aria-label="Тема интерфейса">
+        <button type="button" class="theme-switch-btn" data-ui-theme="auto" title="Следовать системной теме">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.7"/>
+            <path d="M9 20h6M12 17v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>Авто
+        </button>
+        <button type="button" class="theme-switch-btn" data-ui-theme="light" title="Светлая тема">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.7"/>
+            <path d="M12 2.5v2.2M12 19.3v2.2M21.5 12h-2.2M4.7 12H2.5M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6M18.4 18.4l-1.6-1.6M7.2 7.2L5.6 5.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>Светлая
+        </button>
+        <button type="button" class="theme-switch-btn" data-ui-theme="dark" title="Тёмная тема">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M20 13.5A8 8 0 1110.5 4a6.5 6.5 0 009.5 9.5z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+          </svg>Тёмная
+        </button>
       </div>
     </header>
 
@@ -174,6 +195,8 @@
     </section>
 
     <div id="status" class="status" role="status" aria-live="polite"></div>
+
+    <p class="more-modules page-footer">Остальные наши модули и решения смотрите <a href="https://5corners.ru/resheniya_i_moduli/" target="_blank" rel="noopener">на сайте</a>.</p>
   </div>
 
   <script src="options.js"></script>

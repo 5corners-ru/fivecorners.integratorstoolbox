@@ -76,8 +76,49 @@
   --dur: 0.18s;
 }
 
+/* Тёмные токены. Применяются в двух случаях:
+   1) ручной выбор пользователем — :root[data-theme="dark"];
+   2) режим «Авто» (атрибут не задан) + системная тёмная тема. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --brand: #a583e8;
+  --brand-strong: #b89bf0;
+  --brand-soft: #2a2440;
+  --brand-ring: rgba(165, 131, 232, 0.4);
+  --on-brand: #1a1230;
+
+  --bg: #16181d;
+  --surface: #1e2127;
+  --surface-2: #23262d;
+  --surface-3: #292d35;
+  --surface-hover: #2a2e36;
+
+  --border: #2e333c;
+  --border-strong: #3a414c;
+
+  --text: #eceef1;
+  --text-2: #a8b0ba;
+  --text-3: #757d88;
+
+  --success: #4ade80;
+  --success-bg: #16291f;
+  --danger: #f87f9c;
+  --danger-strong: #fa97ae;
+  --danger-bg: #2c1820;
+
+  --switch-off: #3a414c;
+  --switch-knob: #e7eaee;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 14px 36px rgba(0, 0, 0, 0.55);
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+
     --brand: #a583e8;
     --brand-strong: #b89bf0;
     --brand-soft: #2a2440;
@@ -111,3 +152,77 @@
     --shadow-lg: 0 14px 36px rgba(0, 0, 0, 0.55);
   }
 }
+
+/* Ручная светлая тема перебивает системную тёмную. */
+:root[data-theme="light"] { color-scheme: light; }
+
+/* ============================================================
+   Логотип бренда — переключение чёрный/белый знак по теме
+   (централизовано здесь, т.к. tokens.css общий для обоих экранов)
+   ============================================================ */
+.brand-logo { width: 100%; height: 100%; object-fit: contain; display: block; }
+.brand-logo--dark { display: none; }
+
+:root[data-theme="dark"] .brand-logo--light { display: none; }
+:root[data-theme="dark"] .brand-logo--dark  { display: block; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .brand-logo--light { display: none; }
+  :root:not([data-theme]) .brand-logo--dark  { display: block; }
+}
+
+/* ============================================================
+   Сегмент-переключатель темы интерфейса (Авто / Светлая / Тёмная)
+   ============================================================ */
+.theme-switch {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+}
+
+.theme-switch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  font-family: var(--font);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-2);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+
+.theme-switch-btn svg { width: 14px; height: 14px; }
+
+.theme-switch-btn:hover { color: var(--text); }
+
+.theme-switch-btn.is-active {
+  background: var(--surface);
+  color: var(--brand);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ============================================================
+   Сноска «Остальные наши модули и решения…»
+   ============================================================ */
+.more-modules {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+  line-height: 1.5;
+}
+
+.more-modules a {
+  color: var(--brand);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.more-modules a:hover { text-decoration: underline; }
