@@ -16,3 +16,7 @@ __pycache__/
 
 # Logs
 *.log
+
+# Build artifacts (Chrome Web Store packages)
+dist/
+*.zip
