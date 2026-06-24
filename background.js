@@ -35,3 +35,15 @@ function reRegisterAll() {
 
 chrome.runtime.onInstalled.addListener(reRegisterAll);
 chrome.runtime.onStartup.addListener(reRegisterAll);
+
+chrome.runtime.onMessage.addListener(function (message, sender) {
+  if (message.type === 'bp-inject-scanner' && sender.tab) {
+    chrome.scripting.executeScript({
+      target: { tabId: sender.tab.id, allFrames: false },
+      world: 'MAIN',
+      files: ['bp-scanner.js']
+    }).catch(function (err) {
+      console.warn('[bp-scanner] inject error:', err);
+    });
+  }
+});

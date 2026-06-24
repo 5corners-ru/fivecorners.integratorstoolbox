@@ -3,8 +3,6 @@
  *
  * 1. Подсветка синтаксиса выражений в дизайнере БП (кнопка по требованию).
  * 2. Поиск по тексту в стандартных select-списках (>= 5 вариантов).
- * 3. Красный значок на ноде БП, если внутри её настроек Битрикс сообщает
- *    об отсутствующих / недоступных полях, переменных или константах.
  */
 
 (function () {
@@ -12,7 +10,11 @@
 
   var ATTR_DONE        = 'data-bp-hl';
   var ATTR_SEARCH_DONE = 'data-bp-sel';
-  var ATTR_NODE_ERROR  = 'data-bp-err';
+  var ATTR_WARN        = 'data-bp-warn';
+  var ATTR_ACT_SEARCH  = 'data-bp-act-search';
+  var ATTR_FLD_SEARCH  = 'data-bp-fld-search';
+
+  var pendingNode = null;
 
   // ── Тема и цвета ──────────────────────────────────────────────────────────
 
@@ -184,6 +186,24 @@
       if (!document.contains(textarea)) { destroy(); return; }
       if (!taVisible) return;
       var r = textarea.getBoundingClientRect();
+      if (isOpen) {
+        panel.style.left   = Math.round(r.left)   + 'px';
+        panel.style.top    = Math.round(r.top)    + 'px';
+        panel.style.width  = Math.round(r.width)  + 'px';
+        panel.style.height = Math.round(r.height) + 'px';
+      }
+      // Скрываем кнопку если textarea перекрыта модальным окном или оверлеем.
+      // elementFromPoint не зависит от z-index CSS и возвращает реально верхний элемент.
+      if (r.width > 0 && r.height > 0) {
+        var cx = (r.left + r.right) / 2;
+        var cy = (r.top + r.bottom) / 2;
+        var topEl = document.elementFromPoint(cx, cy);
+        if (topEl && topEl !== textarea && !textarea.contains(topEl)) {
+          btn.style.display = 'none';
+          return;
+        }
+      }
+      btn.style.display = '';
       btn.style.left = Math.round(r.right - 42) + 'px';
       btn.style.top  = Math.round(r.top  +  3) + 'px';
     }
@@ -235,9 +255,13 @@
       textarea.focus();
     }
 
+    function onDialogChanged() { if (!destroyed) positionBtn(); }
+    document.addEventListener('bp-dialog-changed', onDialogChanged);
+
     function destroy() {
       destroyed = true;
       visObserver.disconnect();
+      document.removeEventListener('bp-dialog-changed', onDialogChanged);
       if (btn.parentNode)   btn.parentNode.removeChild(btn);
       if (panel.parentNode) panel.parentNode.removeChild(panel);
       window.removeEventListener('scroll', positionBtn, true);
@@ -269,19 +293,18 @@
     if (sel.options.length < BP_SEL_MIN) return;
     sel.setAttribute(ATTR_SEARCH_DONE, 'true');
 
+    // Listbox (size > 1) — field picker внутри overflow:hidden попапа.
+    // Используем overlay (position:fixed на body), чтобы input не обрезался.
+    // Dropdown (size <= 1) — обычный дропдаун; вставляем input в DOM-поток.
+    var useOverlay = sel.size > 1;
+    var destroyed  = false;
+    var visObs     = null;
+    var widthObs   = null;
+
     var input = document.createElement('input');
     input.type = 'text';
     input.className = 'bp-sel-search';
     input.placeholder = 'Поиск в списке…';
-    sel.parentNode.insertBefore(input, sel);
-
-    function syncInputWidth() {
-      var w = sel.offsetWidth;
-      if (w > 0) input.style.width = w + 'px';
-    }
-    syncInputWidth();
-    var widthObs = new ResizeObserver(syncInputWidth);
-    widthObs.observe(sel);
 
     var dropdown = document.createElement('div');
     dropdown.className = 'bp-sel-dropdown';
@@ -289,15 +312,11 @@
 
     var activeIdx = -1;
 
-    function getItems() {
-      return dropdown.querySelectorAll('.bp-sel-item');
-    }
+    function getItems() { return dropdown.querySelectorAll('.bp-sel-item'); }
 
     function setActive(idx) {
       var items = getItems();
-      if (activeIdx >= 0 && items[activeIdx]) {
-        items[activeIdx].className = 'bp-sel-item';
-      }
+      if (activeIdx >= 0 && items[activeIdx]) items[activeIdx].className = 'bp-sel-item';
       activeIdx = idx;
       if (activeIdx >= 0 && items[activeIdx]) {
         items[activeIdx].className = 'bp-sel-item bp-sel-active';
@@ -320,25 +339,18 @@
       activeIdx = -1;
     }
 
-    function closeDropdown() {
-      dropdown.style.display = 'none';
-      activeIdx = -1;
-    }
+    function closeDropdown() { dropdown.style.display = 'none'; activeIdx = -1; }
 
     function buildDropdown(query) {
       dropdown.innerHTML = '';
       activeIdx = -1;
       if (!query) { closeDropdown(); return; }
-
       var q = query.toLowerCase();
       var matches = [];
       for (var i = 0; i < sel.options.length; i++) {
         var opt = sel.options[i];
-        if (opt.text.toLowerCase().indexOf(q) !== -1) {
-          matches.push({ text: opt.text, value: opt.value });
-        }
+        if (opt.text.toLowerCase().indexOf(q) !== -1) matches.push({ text: opt.text, value: opt.value });
       }
-
       if (!matches.length) {
         var nores = document.createElement('div');
         nores.className = 'bp-sel-nores';
@@ -357,52 +369,79 @@
           dropdown.appendChild(item);
         });
       }
-
       positionDropdown();
       dropdown.style.display = 'block';
     }
 
-    input.addEventListener('input', function () {
-      buildDropdown(input.value.trim());
-    });
-
+    input.addEventListener('input', function () { buildDropdown(input.value.trim()); });
     input.addEventListener('keydown', function (e) {
       var items = getItems();
-      var key = e.key || '';
-      var kc  = e.keyCode;
-      if (key === 'ArrowDown' || kc === 40) {
-        e.preventDefault();
-        setActive(Math.min(activeIdx + 1, items.length - 1));
-      } else if (key === 'ArrowUp' || kc === 38) {
-        e.preventDefault();
-        setActive(Math.max(activeIdx - 1, 0));
-      } else if (key === 'Enter' || kc === 13) {
-        e.preventDefault();
-        if (activeIdx >= 0 && items[activeIdx]) {
-          selectValue(
-            items[activeIdx].getAttribute('data-val'),
-            items[activeIdx].textContent
-          );
-        }
-      } else if (key === 'Escape' || kc === 27) {
-        closeDropdown();
-      }
+      var key = e.key || ''; var kc = e.keyCode;
+      if      (key === 'ArrowDown' || kc === 40) { e.preventDefault(); setActive(Math.min(activeIdx + 1, items.length - 1)); }
+      else if (key === 'ArrowUp'   || kc === 38) { e.preventDefault(); setActive(Math.max(activeIdx - 1, 0)); }
+      else if (key === 'Enter'     || kc === 13) { e.preventDefault(); if (activeIdx >= 0 && items[activeIdx]) selectValue(items[activeIdx].getAttribute('data-val'), items[activeIdx].textContent); }
+      else if (key === 'Escape'    || kc === 27) { closeDropdown(); }
     });
+    input.addEventListener('blur',  function () { setTimeout(closeDropdown, 150); });
+    input.addEventListener('focus', function () { if (input.value.trim()) buildDropdown(input.value.trim()); });
 
-    input.addEventListener('blur', function () {
-      setTimeout(closeDropdown, 150);
-    });
+    var positionInput = function () {};  // no-op; переопределяется для overlay
 
-    input.addEventListener('focus', function () {
-      if (input.value.trim()) buildDropdown(input.value.trim());
-    });
-
-    window.addEventListener('scroll', function () {
+    function onScrollResize() {
+      positionInput();
       if (dropdown.style.display !== 'none') positionDropdown();
-    }, true);
-    window.addEventListener('resize', function () {
-      if (dropdown.style.display !== 'none') positionDropdown();
-    });
+    }
+
+    function destroy() {
+      if (destroyed) return;
+      destroyed = true;
+      if (visObs)   visObs.disconnect();
+      if (widthObs) widthObs.disconnect();
+      window.removeEventListener('scroll', onScrollResize, true);
+      window.removeEventListener('resize', onScrollResize);
+      if (input.parentNode)    input.parentNode.removeChild(input);
+      if (dropdown.parentNode) dropdown.parentNode.removeChild(dropdown);
+    }
+
+    if (useOverlay) {
+      // Overlay-режим: input крепится к body, position:fixed
+      input.style.cssText = 'position:fixed;z-index:2147483641;display:none;box-shadow:0 2px 6px rgba(0,0,0,.15);';
+      document.body.appendChild(input);
+
+      positionInput = function () {
+        if (destroyed) return;
+        if (!document.contains(sel)) { destroy(); return; }
+        var r = sel.getBoundingClientRect();
+        if (r.width === 0 && r.height === 0) { input.style.display = 'none'; return; }
+        input.style.display = '';
+        var inputH = input.offsetHeight || 28;
+        input.style.left  = Math.round(r.left)  + 'px';
+        input.style.width = Math.round(r.width) + 'px';
+        var topAbove = r.top - inputH - 2;
+        input.style.top = Math.round(topAbove < 0 ? r.top : topAbove) + 'px';
+      };
+
+      visObs = new IntersectionObserver(function (entries) {
+        if (destroyed) return;
+        if (!entries[0].isIntersecting) { input.style.display = 'none'; closeDropdown(); }
+        else { positionInput(); }
+      }, { threshold: 0 });
+      visObs.observe(sel);
+
+      positionInput();
+      setTimeout(function () { try { input.focus(); } catch(e) {} }, 100);
+
+    } else {
+      // DOM-режим: input вставляется перед select в поток
+      sel.parentNode.insertBefore(input, sel);
+      var syncWidth = function () { var w = sel.offsetWidth; if (w > 0) input.style.width = w + 'px'; };
+      syncWidth();
+      widthObs = new ResizeObserver(syncWidth);
+      widthObs.observe(sel);
+    }
+
+    window.addEventListener('scroll', onScrollResize, true);
+    window.addEventListener('resize', onScrollResize);
   }
 
   function scanSelects(root) {
@@ -412,90 +451,178 @@
     for (var i = 0; i < selects.length; i++) {
       var sel = selects[i];
       if (sel.getAttribute(ATTR_SEARCH_DONE)) continue;
-      if (sel.offsetParent === null) continue;
+      // offsetParent === null у select внутри position:fixed попапа — проверяем через computed style
+      var cs = window.getComputedStyle(sel);
+      if (cs.display === 'none' || cs.visibility === 'hidden') continue;
       attachSearchableSelect(sel);
     }
-  }
-
-  // ── Фича 1: Красный значок на ноде БП при ошибке ─────────────────────────
-
-  var lastMouseTarget = null;
-  var lastMouseTime   = 0;
-
-  var BP_ERR_MARKERS = ['отсутствующ', 'недоступн'];
-
-  function hasErrorText(el) {
-    var text = (el && el.textContent) ? el.textContent : '';
-    for (var i = 0; i < BP_ERR_MARKERS.length; i++) {
-      if (text.indexOf(BP_ERR_MARKERS[i]) !== -1) return true;
-    }
-    return false;
   }
 
   function looksLikeActivityDialog(el) {
     if (!el || el.nodeType !== 1) return false;
     var cls = typeof el.className === 'string' ? el.className : '';
     return /(^| )popup-window( |$)/.test(cls) ||
-           /(^| )bx-core-window( |$)/.test(cls);
+           /(^| )bx-core-window( |$)/.test(cls) ||
+           cls.indexOf('bx-core-ade-dialog') !== -1;
   }
 
-  function findActivityNode(el) {
-    if (!el) return null;
-    var cur = el;
-    for (var depth = 0; depth < 25 && cur && cur !== document.body; depth++, cur = cur.parentElement) {
-      if (cur.nodeType !== 1) continue;
-      var cls = typeof cur.className === 'string' ? cur.className : '';
-      if (cls.indexOf('activityhead') !== -1) {
-        return cur.parentElement || cur;
-      }
-      if (
-        /bizproc.*(activity|robot|block|element|action|item|task)/i.test(cls) ||
-        /automation.*(robot|action|trigger)/i.test(cls) ||
-        cls.indexOf('activity-modern') !== -1 ||
-        cur.hasAttribute('data-activity-id') ||
-        cur.hasAttribute('data-robot-id') ||
-        cur.hasAttribute('data-cid')
-      ) {
-        return cur;
-      }
-    }
-    return null;
+  // ── Проверка нод на неактуальные поля/переменные ─────────────────────────
+
+  function markNodeWithWarning(node) {
+    if (!node || node.getAttribute(ATTR_WARN)) return;
+    node.setAttribute(ATTR_WARN, 'true');
+    node.title = 'Используются отсутствующие или недоступные поля/переменные/константы';
   }
 
-  function markNodeError(node) {
-    if (!node) return;
-    if (node.getAttribute(ATTR_NODE_ERROR)) return;
-    node.setAttribute(ATTR_NODE_ERROR, 'true');
-    if (window.getComputedStyle(node).position === 'static') {
-      node.style.position = 'relative';
-    }
-    var badge = document.createElement('span');
-    badge.className = 'bp-err-badge';
-    badge.title = 'Используются отсутствующие или недоступные поля/переменные/константы';
-    node.appendChild(badge);
+  function clearNodeWarning(node) {
+    if (!node || !node.getAttribute(ATTR_WARN)) return;
+    node.removeAttribute(ATTR_WARN);
+    node.title = '';
   }
 
-  function watchDialogForErrors(dialog) {
-    var savedTarget = lastMouseTarget;
-    if (hasErrorText(dialog)) {
-      markNodeError(findActivityNode(savedTarget));
-      return;
-    }
-    var obs = new MutationObserver(function () {
-      if (hasErrorText(dialog)) {
-        obs.disconnect();
-        markNodeError(findActivityNode(savedTarget));
+  function checkDialogForWarning() {
+    if (!pendingNode) return;
+    var node = pendingNode;
+    setTimeout(function () {
+      var warning = document.getElementById('bp_act_set_broken_link');
+      var hasWarning = warning && window.getComputedStyle(warning).display !== 'none';
+      if (hasWarning) {
+        markNodeWithWarning(node);
+      } else {
+        clearNodeWarning(node);
       }
+    }, 400);
+  }
+
+  // ── Автосканирование нод по данным шаблона ───────────────────────────────
+  // Content script работает в изолированном мире и не видит переменных страницы
+  // (arWorkflowTemplate, rootActivity и др.). Инжектируем скрипт в контекст
+  // страницы — он помечает сломанные ноды атрибутом data-bp-broken-link,
+  // после чего шлёт событие bp-broken-scan-done, которое ловим здесь.
+
+  function clearAllBpWarnings() {
+    var nodes = document.querySelectorAll('[' + ATTR_WARN + ']');
+    for (var i = 0; i < nodes.length; i++) clearNodeWarning(nodes[i]);
+  }
+
+
+  // ── Фича 3: Поиск по нодам в панели активностей ─────────────────────────
+  // Реальные классы правой панели (из DevTools):
+  //   группа:    div.swftoolboxgroupclosed / div.swftoolboxgroupopened
+  //   заголовок: div.swftoolboxgroupheader
+  //   текст:     div.swftoolboxgrheadtext
+  // Контейнер панели — parentElement любой группы.
+  // Фильтрация: скрываем группы, в чьём textContent нет совпадения.
+
+  var SWF_GROUP_SEL  = '.swftoolboxgroupclosed, .swftoolboxgroupopened';
+  var NODE_ROW_SEL   = '.swftoolboxgrouplist tr[style*="height"]';
+
+  function findActivityPanel() {
+    var group = document.querySelector(SWF_GROUP_SEL);
+    return group ? group.parentElement : null;
+  }
+
+  function attachActivityPanelSearch(panel) {
+    if (!panel || panel.getAttribute(ATTR_ACT_SEARCH)) return;
+    panel.setAttribute(ATTR_ACT_SEARCH, 'true');
+
+    var wrap = document.createElement('div');
+    wrap.className = 'bp-act-search-wrap';
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'bp-act-search-input';
+    input.placeholder = 'Поиск по нодам…';
+    wrap.appendChild(input);
+    panel.insertBefore(wrap, panel.firstChild);
+
+    function applyFilter(q) {
+      q = (q || '').toLowerCase().trim();
+      var groups = panel.querySelectorAll(SWF_GROUP_SEL);
+      for (var g = 0; g < groups.length; g++) {
+        var group = groups[g];
+        var nodeRows = group.querySelectorAll(NODE_ROW_SEL);
+
+        if (!q) {
+          group.style.display = '';
+          for (var i = 0; i < nodeRows.length; i++) nodeRows[i].style.display = '';
+          continue;
+        }
+
+        var anyMatch = false;
+        for (var i = 0; i < nodeRows.length; i++) {
+          var text = (nodeRows[i].textContent || '').toLowerCase();
+          var match = text.indexOf(q) !== -1;
+          nodeRows[i].style.display = match ? '' : 'none';
+          if (match) anyMatch = true;
+        }
+        group.style.display = anyMatch ? '' : 'none';
+      }
+    }
+
+    input.addEventListener('input', function () { applyFilter(input.value); });
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' || e.keyCode === 27) { input.value = ''; applyFilter(''); }
     });
-    obs.observe(dialog, { childList: true, subtree: true, characterData: true });
-    setTimeout(function () { obs.disconnect(); }, 5000);
   }
 
-  function initErrorBadgeDetector() {
-    document.addEventListener('mousedown', function (e) {
-      lastMouseTarget = e.target;
-      lastMouseTime   = Date.now();
-    }, true);
+  function tryAttachActivitySearch() {
+    var panel = findActivityPanel();
+    if (panel) attachActivityPanelSearch(panel);
+  }
+
+  // ── Фича 4: Поиск в field picker условия «Смешанное» ─────────────────────
+  // Реализовано как BX.PopupMenu: div.popup-window.ul-context-light
+  // Категории (Параметры, Переменные…) — первый popup с ~5 пунктами.
+  // Поля (ID элемента CRM, Название…) — вложенное подменю с >8 пунктами.
+  // Вставляем поиск в подменю поверх списка полей.
+  // Элементы: li.menu-popup-item > span.menu-popup-item-text
+
+  function attachFieldMenuSearch(popup) {
+    if (popup.getAttribute(ATTR_FLD_SEARCH)) return;
+
+    // Пропускаем меню категорий: у них пункты имеют стрелку вправо (submenu).
+    // Меню полей состоит из обычных кликабельных пунктов без submenu-стрелки.
+    var subMenuItems = popup.querySelectorAll('.menu-popup-item-submenu');
+    if (subMenuItems.length > 0) return;
+
+    var allItems = popup.querySelectorAll('.menu-popup-item');
+    if (allItems.length < 2) return;
+
+    popup.setAttribute(ATTR_FLD_SEARCH, 'true');
+
+    var content = popup.querySelector('.popup-window-content') || popup;
+
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'bp-fld-search-input';
+    input.placeholder = 'Поиск по полям…';
+    content.insertBefore(input, content.firstChild);
+
+    setTimeout(function () { try { input.focus(); } catch(e){} }, 80);
+
+    function applyFilter(q) {
+      q = (q || '').toLowerCase().trim();
+      var its = popup.querySelectorAll('.menu-popup-item');
+      for (var i = 0; i < its.length; i++) {
+        var text = (its[i].textContent || '').trim().toLowerCase();
+        its[i].style.display = (!q || text.indexOf(q) !== -1) ? '' : 'none';
+      }
+    }
+
+    input.addEventListener('input', function () { applyFilter(input.value); });
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' || e.keyCode === 27) { input.value = ''; applyFilter(''); }
+    });
+    input.addEventListener('mousedown', function (e) { e.stopPropagation(); });
+  }
+
+  function scanFieldPickerPopups(root) {
+    var r = root || document;
+    if (!r.querySelectorAll) return;
+    var popups = r.querySelectorAll('.popup-window.ul-context-light');
+    for (var i = 0; i < popups.length; i++) {
+      attachFieldMenuSearch(popups[i]);
+    }
   }
 
   // ── Проверка целевой страницы ─────────────────────────────────────────────
@@ -544,39 +671,76 @@
 
         if (!isTargetPage()) return;
 
-        initErrorBadgeDetector();
+        document.addEventListener('click', function (e) {
+          var btn = e.target.closest('.activityset');
+          if (btn) pendingNode = btn.closest('div.activity.activity-modern');
+
+          // Клик на «выбрать» открывает popup с категориями полей —
+          // сканируем select-ы через небольшую задержку.
+          var link = e.target.closest('a, span');
+          if (link && (link.textContent || '').trim() === 'выбрать') {
+            [150, 400].forEach(function (ms) {
+              setTimeout(function () { scanSelects(document); }, ms);
+            });
+          }
+        }, true);
+
+        // Наведение на пункт-подменю (.menu-popup-item-submenu) раскрывает
+        // вложенный popup с SELECT-ом полей — сканируем после появления.
+        document.addEventListener('mouseover', function (e) {
+          if (e.target.closest('.menu-popup-item-submenu')) {
+            setTimeout(function () { scanSelects(document); }, 250);
+          }
+        }, true);
 
         scanAndAttach(document);
         scanSelects(document);
+        tryAttachActivitySearch();
+        scanFieldPickerPopups(document);
 
         [300, 1000, 2500].forEach(function (ms) {
           setTimeout(function () {
             scanAndAttach(document);
             scanSelects(document);
+            tryAttachActivitySearch();
+            scanFieldPickerPopups(document);
           }, ms);
+        });
+
+        chrome.runtime.sendMessage({ type: 'bp-inject-scanner' });
+        document.addEventListener('bp-broken-scan-done', function () {
+          clearAllBpWarnings();
+          var broken = document.querySelectorAll('div.activity.activity-modern[data-bp-broken-link]');
+          for (var i = 0; i < broken.length; i++) markNodeWithWarning(broken[i]);
         });
 
         if (document.body) {
           var observer = new MutationObserver(function (mutations) {
             var added = false;
+            var dialogChanged = false;
             for (var i = 0; i < mutations.length; i++) {
               var addedNodes = mutations[i].addedNodes;
               for (var j = 0; j < addedNodes.length; j++) {
                 var node = addedNodes[j];
                 if (node.nodeType !== 1) continue;
                 added = true;
-                // Фича 1: смотрим, не открылся ли диалог активити
-                if (Date.now() - lastMouseTime < 3000 && looksLikeActivityDialog(node)) {
-                  if (!node.hasAttribute('data-bp-err-watched')) {
-                    node.setAttribute('data-bp-err-watched', 'true');
-                    watchDialogForErrors(node);
-                  }
+                if (looksLikeActivityDialog(node)) {
+                  dialogChanged = true;
+                  checkDialogForWarning();
                 }
               }
+              var removedNodes = mutations[i].removedNodes;
+              for (var k = 0; k < removedNodes.length; k++) {
+                var rnode = removedNodes[k];
+                if (rnode.nodeType === 1 && looksLikeActivityDialog(rnode)) dialogChanged = true;
+              }
             }
+            if (dialogChanged) document.dispatchEvent(new CustomEvent('bp-dialog-changed'));
             if (added) {
               scanAndAttach(document);
               scanSelects(document);
+              tryAttachActivitySearch();
+              scanFieldPickerPopups(document);
             }
           });
           observer.observe(document.body, { childList: true, subtree: true });
