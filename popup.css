@@ -67,6 +67,9 @@ body {
 .popup-header .theme-switch { margin-top: var(--gap-3); }
 
 .popup-footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-2);
   padding: var(--gap-3) var(--gap-5) var(--gap-5);
   border-top: 1px solid var(--border);
 }

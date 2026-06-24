@@ -41,6 +41,8 @@ body {
   text-align: center;
 }
 
+.page-footer .more-modules + .more-modules { margin-top: 6px; }
+
 .brand-mark {
   display: inline-flex;
   align-items: center;
