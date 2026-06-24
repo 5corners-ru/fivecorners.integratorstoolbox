@@ -9,7 +9,6 @@
   'use strict';
 
   const STORAGE_KEY_ORIGINS = 'bpSyntaxCustomOrigins';
-  const STORAGE_KEY_ENABLED = 'bpSyntaxEnabled';
   const STORAGE_KEY_THEME = 'bpSyntaxTheme';
   const STORAGE_KEY_COLORS = 'bpSyntaxColors';
 
@@ -81,15 +80,23 @@
     }
   }
 
-  /* ---------- Глобальное вкл/выкл ---------- */
-  const globalEnabledEl = document.getElementById('global-enabled');
-  if (globalEnabledEl) {
-    chrome.storage.local.get([STORAGE_KEY_ENABLED], function (data) {
-      globalEnabledEl.checked = data[STORAGE_KEY_ENABLED] !== false;
+  /* ---------- Тумблеры инструментов ---------- */
+  /* Каждый чекбокс хранит свой storage-ключ в data-tool; отсутствие ключа = включён.
+     Те же ключи, что в popup.js (bpSyntaxEnabled / bpToolSelectSearch / bpToolNodeSearch / bpToolBrokenLinks). */
+  const toolToggles = document.querySelectorAll('input[data-tool]');
+  if (toolToggles.length) {
+    const toolKeys = Array.prototype.map.call(toolToggles, function (el) { return el.getAttribute('data-tool'); });
+    chrome.storage.local.get(toolKeys, function (data) {
+      Array.prototype.forEach.call(toolToggles, function (el) {
+        el.checked = data[el.getAttribute('data-tool')] !== false;
+      });
     });
-    globalEnabledEl.addEventListener('change', function () {
-      chrome.storage.local.set({ [STORAGE_KEY_ENABLED]: globalEnabledEl.checked });
-      showStatus(globalEnabledEl.checked ? 'Подсветка включена. Обновите страницу с БП.' : 'Подсветка выключена. Обновите страницу.');
+    Array.prototype.forEach.call(toolToggles, function (el) {
+      el.addEventListener('change', function () {
+        const on = this.checked;
+        chrome.storage.local.set({ [this.getAttribute('data-tool')]: on });
+        showStatus((on ? 'Инструмент включён' : 'Инструмент выключен') + '. Обновите страницу с БП.');
+      });
     });
   }
 

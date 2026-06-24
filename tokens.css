@@ -1,0 +1,113 @@
+/* ============================================================
+   tokens.css — общие дизайн-токены расширения
+   «5 УГЛОВ. Инструменты интегратора Bitrix24»
+   Подключается ПЕРВЫМ в popup.html и options.html.
+   Все переменные переопределяются в тёмной теме ниже.
+   ============================================================ */
+
+:root {
+  color-scheme: light dark;
+
+  /* --- Бренд-акцент (фиолетовый 5 УГЛОВ) --- */
+  --brand: #6f42c1;
+  --brand-strong: #5a32a3;
+  --brand-soft: #f3eefb;
+  --brand-ring: rgba(111, 66, 193, 0.35);
+  --on-brand: #ffffff;
+
+  /* --- Поверхности --- */
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #f9fafb;
+  --surface-3: #f1f3f5;
+  --surface-hover: #f3f4f6;
+
+  /* --- Границы --- */
+  --border: #e6e8eb;
+  --border-strong: #d6d9de;
+
+  /* --- Текст --- */
+  --text: #1a1d21;
+  --text-2: #555c66;
+  --text-3: #8a929c;
+
+  /* --- Статусы --- */
+  --success: #18794e;
+  --success-bg: #e7f6ee;
+  --danger: #c7254e;
+  --danger-strong: #b01e44;
+  --danger-bg: #fbe9ee;
+
+  /* --- Switch (тумблеры) --- */
+  --switch-off: #cfd4da;
+  --switch-knob: #ffffff;
+
+  /* --- Радиусы --- */
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+
+  /* --- Тени (мягкие, «дорогие») --- */
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --shadow-md: 0 4px 12px rgba(16, 24, 40, 0.08);
+  --shadow-lg: 0 12px 32px rgba(16, 24, 40, 0.12);
+  --shadow-focus: 0 0 0 3px var(--brand-ring);
+
+  /* --- Типографика --- */
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-base: 13px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 18px;
+
+  /* --- Отступы --- */
+  --gap-1: 4px;
+  --gap-2: 8px;
+  --gap-3: 12px;
+  --gap-4: 16px;
+  --gap-5: 20px;
+  --gap-6: 24px;
+
+  /* --- Анимация --- */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur: 0.18s;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --brand: #a583e8;
+    --brand-strong: #b89bf0;
+    --brand-soft: #2a2440;
+    --brand-ring: rgba(165, 131, 232, 0.4);
+    --on-brand: #1a1230;
+
+    --bg: #16181d;
+    --surface: #1e2127;
+    --surface-2: #23262d;
+    --surface-3: #292d35;
+    --surface-hover: #2a2e36;
+
+    --border: #2e333c;
+    --border-strong: #3a414c;
+
+    --text: #eceef1;
+    --text-2: #a8b0ba;
+    --text-3: #757d88;
+
+    --success: #4ade80;
+    --success-bg: #16291f;
+    --danger: #f87f9c;
+    --danger-strong: #fa97ae;
+    --danger-bg: #2c1820;
+
+    --switch-off: #3a414c;
+    --switch-knob: #e7eaee;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 14px 36px rgba(0, 0, 0, 0.55);
+  }
+}

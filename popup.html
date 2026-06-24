@@ -4,41 +4,91 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>5 УГЛОВ. Инструменты интегратора Bitrix24</title>
+  <link rel="stylesheet" href="tokens.css">
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
   <div class="popup-header">
-    <h1>5 УГЛОВ. Инструменты интегратора Bitrix24</h1>
-    <p class="hint">Подсветка работает на всех облачных Битрикс24. Для добавления коробочных Битрикс24 добавьте свой домен в список разрешённых.</p>
+    <div class="brand">
+      <span class="brand-mark">
+        <img class="brand-logo brand-logo--light" src="icons/logo-black.png" alt="5 УГЛОВ" width="36" height="36">
+        <img class="brand-logo brand-logo--dark" src="icons/logo-white.png" alt="" aria-hidden="true" width="36" height="36">
+      </span>
+      <div class="brand-text">
+        <h1>5 УГЛОВ</h1>
+        <span class="brand-sub">Инструменты интегратора Bitrix24</span>
+      </div>
+    </div>
+    <p class="hint">Работает на всех облачных Битрикс24. Для коробочных порталов добавьте домен в список разрешённых.</p>
   </div>
 
   <div class="tools-section">
-    <div class="tools-title">Инструменты</div>
+    <div class="section-head">
+      <span class="section-icon" aria-hidden="true">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14.7 6.3a4 4 0 00-5.4 5.4l-6 6a1.5 1.5 0 002.1 2.1l6-6a4 4 0 005.4-5.4l-2.6 2.6-2.1-2.1 2.6-2.6z"
+                stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      <span class="section-title">Инструменты</span>
+    </div>
+
     <label class="tool-toggle">
-      <input type="checkbox" data-tool="bpSyntaxEnabled" checked>
       <span class="tool-name">Подсветка синтаксиса<small>в полях выражений дизайнера БП</small></span>
+      <span class="switch">
+        <input type="checkbox" data-tool="bpSyntaxEnabled" checked>
+        <span class="switch-track"><span class="switch-knob"></span></span>
+      </span>
     </label>
+
     <label class="tool-toggle">
-      <input type="checkbox" data-tool="bpToolSelectSearch" checked>
       <span class="tool-name">Поиск в списках и полях<small>в выпадающих списках и выборе полей</small></span>
+      <span class="switch">
+        <input type="checkbox" data-tool="bpToolSelectSearch" checked>
+        <span class="switch-track"><span class="switch-knob"></span></span>
+      </span>
     </label>
+
     <label class="tool-toggle">
-      <input type="checkbox" data-tool="bpToolNodeSearch" checked>
       <span class="tool-name">Поиск по нодам<small>в правой панели действий дизайнера БП</small></span>
+      <span class="switch">
+        <input type="checkbox" data-tool="bpToolNodeSearch" checked>
+        <span class="switch-track"><span class="switch-knob"></span></span>
+      </span>
     </label>
+
     <label class="tool-toggle">
-      <input type="checkbox" data-tool="bpToolBrokenLinks" checked>
       <span class="tool-name">Подсветка нод с ошибками<small>отметка нод с битыми полями/переменными</small></span>
+      <span class="switch">
+        <input type="checkbox" data-tool="bpToolBrokenLinks" checked>
+        <span class="switch-track"><span class="switch-knob"></span></span>
+      </span>
     </label>
-    <p class="tools-hint">После переключения обновите страницу с БП.</p>
+
+    <p class="tools-hint">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M4 4v5h5M20 20v-5h-5M19.4 9A8 8 0 005.1 6.4M4.6 15A8 8 0 0018.9 17.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      После переключения обновите страницу с БП.
+    </p>
   </div>
 
   <ul id="origins-list" class="origins-list"></ul>
 
   <div class="popup-actions">
     <div id="current-site-hint" class="current-site-hint" role="status" aria-live="polite" hidden></div>
-    <button type="button" id="add-current-btn" class="btn btn-primary">Добавить текущий портал</button>
-    <a href="#" id="open-options" class="link">Открыть полные настройки</a>
+    <button type="button" id="add-current-btn" class="btn btn-primary">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      Добавить текущий портал
+    </button>
+    <a href="#" id="open-options" class="link">
+      Открыть полные настройки
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
   </div>
 
   <div id="status" class="status" role="status" aria-live="polite"></div>
