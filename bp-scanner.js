@@ -20,11 +20,11 @@
       var re = /\{=(\w+):(\w+)/g, m;
       while ((m = re.exec(text)) !== null) {
         var type = m[1], id = m[2];
-        if (type === 'Variable'       && !vars[id])    return true;
-        if (type === 'Constant'       && !consts[id])  return true;
-        if (type === 'Template'       && !params[id])  return true;
-        if (type === 'GlobalConstant' && !gConsts[id]) return true;
-        if (type === 'GlobalVar'      && !gVars[id])   return true;
+        if (type === 'Variable'       && window.arWorkflowVariables        && !vars[id])    return true;
+        if (type === 'Constant'       && window.arWorkflowConstants        && !consts[id])  return true;
+        if (type === 'Template'       && window.arWorkflowParameters       && !params[id])  return true;
+        if (type === 'GlobalConstant' && window.arWorkflowGlobalConstants  && !gConsts[id]) return true;
+        if (type === 'GlobalVar'      && window.arWorkflowGlobalVariables  && !gVars[id])   return true;
       }
       return false;
     }
@@ -65,7 +65,10 @@
     attempts++;
     var tpl = window.arWorkflowTemplate;
     var ready = tpl && tpl.Children && tpl.Children.length > 0 &&
-                window.rootActivity && typeof window.rootActivity.findChildById === 'function';
+                window.rootActivity && typeof window.rootActivity.findChildById === 'function' &&
+                window.arWorkflowVariables !== undefined &&
+                window.arWorkflowConstants !== undefined &&
+                window.arWorkflowParameters !== undefined;
     if (ready || attempts >= 40) {
       clearInterval(timer);
       if (ready) {

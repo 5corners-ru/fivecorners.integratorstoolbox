@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "5 УГЛОВ. Инструменты интегратора Bitrix24",
-  "version": "1.9.6",
+  "version": "1.9.7",
   "description": "Инструменты интегратора Bitrix24: подсветка синтаксиса БП, поиск по нодам и спискам, отметка нод с ошибками.",
   "permissions": ["storage", "scripting", "activeTab"],
   "optional_host_permissions": ["https://*/*", "http://*/*"],
