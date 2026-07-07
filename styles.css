@@ -51,6 +51,14 @@
 
 /* ── Поиск в select-списках ─────────────────────────────────────────────── */
 
+/* Резервирует в потоке место под fixed-input оверлея (см. attachSearchableSelect) */
+.bp-sel-search-spacer {
+  display: block;
+  box-sizing: border-box;
+  height: 28px;
+  margin-bottom: 2px;
+}
+
 .bp-sel-search {
   display: block;
   box-sizing: border-box;

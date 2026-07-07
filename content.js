@@ -401,24 +401,37 @@
       window.removeEventListener('resize', onScrollResize);
       if (input.parentNode)    input.parentNode.removeChild(input);
       if (dropdown.parentNode) dropdown.parentNode.removeChild(dropdown);
+      if (spacer && spacer.parentNode) spacer.parentNode.removeChild(spacer);
     }
 
     if (useOverlay) {
-      // Overlay-режим: input крепится к body, position:fixed
+      // Overlay-режим: сам input — position:fixed (чтобы не обрезался overflow:hidden попапа),
+      // но перед select вставляем spacer прямо в поток — он резервирует под инпут реальное
+      // место, раздвигая соседний контент, чтобы фиксированный input не накладывался поверх
+      // текста, который был выше select (например ссылки "Переменные/Константы/..." в диалоге
+      // "Вставка значения").
+      var spacer = document.createElement('div');
+      spacer.className = 'bp-sel-search-spacer';
+      sel.parentNode.insertBefore(spacer, sel);
+
       input.style.cssText = 'position:fixed;z-index:2147483641;display:none;box-shadow:0 2px 6px rgba(0,0,0,.15);';
       document.body.appendChild(input);
+
+      var syncWidthOverlay = function () { var w = sel.offsetWidth; if (w > 0) spacer.style.width = w + 'px'; };
+      syncWidthOverlay();
+      widthObs = new ResizeObserver(syncWidthOverlay);
+      widthObs.observe(sel);
 
       positionInput = function () {
         if (destroyed) return;
         if (!document.contains(sel)) { destroy(); return; }
-        var r = sel.getBoundingClientRect();
-        if (r.width === 0 && r.height === 0) { input.style.display = 'none'; return; }
+        var selR = sel.getBoundingClientRect();
+        if (selR.width === 0 && selR.height === 0) { input.style.display = 'none'; return; }
+        var r = spacer.getBoundingClientRect();
         input.style.display = '';
-        var inputH = input.offsetHeight || 28;
-        input.style.left  = Math.round(r.left)  + 'px';
-        input.style.width = Math.round(r.width) + 'px';
-        var topAbove = r.top - inputH - 2;
-        input.style.top = Math.round(topAbove < 0 ? r.top : topAbove) + 'px';
+        input.style.left  = Math.round(r.left)   + 'px';
+        input.style.top   = Math.round(r.top)    + 'px';
+        input.style.width = Math.round(r.width)  + 'px';
       };
 
       visObs = new IntersectionObserver(function (entries) {
